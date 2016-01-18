@@ -5,7 +5,8 @@ import java.text.SimpleDateFormat
 import java.util.regex.Pattern
 
 def reformatDate(String date) {
-    def sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.US)
+    //lun. 31 janv. 2005
+    def sdf = new SimpleDateFormat("EEE. dd MMM. yyyy", Locale.FRENCH)
     sdf.lenient = true
     def parsed = sdf.parse(date)
     sdf = new SimpleDateFormat('yyyy-MM-dd')
@@ -21,31 +22,37 @@ def processPage(String url) {
     def metadata = [:].withDefault { '' }
 
     page.traverse { TagNode tagNode, htmlNode ->
-        if (!metadata.contents && tagNode?.name=='div' && tagNode?.attributes?.class == 'postentry') {
+        if (!metadata.contents && tagNode?.name=='div' && tagNode?.attributes?.class == 'post-content') {
             metadata.contents = tagNode
         }
         // tags
         // <p class="meta">Tags:  <a href="http://www.jroller.com/melix/tags/enseignement">enseignement</a> <a href="http://www.jroller.com/melix/tags/informatique">informatique</a></p>
-        if (!metadata.tags && tagNode?.name=='p' && tagNode?.attributes?.class=='meta' && tagNode.text.toString().startsWith('Tags')) {
-            metadata.tags = (tagNode.text - 'Tags:').trim().split(' ')
+        if (!metadata.tags && tagNode?.name=='div' && tagNode?.attributes?.class=='tags') {
+            metadata.tags = tagNode.text
         }
         // next page
-        if (!metadata.next && tagNode?.name=='div' && tagNode?.attributes?.class=='next-previous' && tagNode.text.toString().contains('&raquo;')) {
+        if (!metadata.next && tagNode?.name=='div' && tagNode?.attributes?.class=='next-previous') {
+            //def nexLink = tagNode.children[5].getAttributeByName("href")
+                    //tagNode.childTagList.findAll { it.name == 'a' }
             def links = tagNode.childTagList.findAll { it.name == 'a' }
             metadata.next = links[-1].attributes.href
         }
         // date
         // <p class="meta">01:42PM Jul 26, 2007 in category <u>Java</u> by Cédric Champeau</p>
-        if (!metadata.publishedDate && tagNode?.name=='p' && tagNode?.attributes?.class=='meta') {
-            def m = tagNode.text =~ /(?:[0-9]{2}:[0-9]{2}[AP]M )(.*) in category/
-            if (m.find()) {
-                metadata.publishedDate = reformatDate(m.group(1))
-            }
+        // TODO <p class="post-date">lun. 31 janv. 2005</p>
+        if (!metadata.publishedDate && tagNode?.name=='p' && tagNode?.attributes?.class=='post-date') {
+            metadata.publishedDate = tagNode.text;
         }
         // title
-        if (!metadata.title && tagNode?.name=='h2' && tagNode?.attributes?.class=='storytitle') {
-            metadata.title = tagNode.text.toString()
-            metadata.id = tagNode?.attributes?.id
+        if (!metadata.title && tagNode?.name=='h2' && tagNode?.attributes?.class=='post-title') {
+            def extractedTitle = tagNode.children[0].getAttributeByName("title").toString()
+            // TODO regexp: Permanent Link: Java plus rapide, plus léger
+            metadata.title = extractedTitle.substring(extractedTitle.indexOf(':')+1,extractedTitle.length())
+
+            def extractedId = tagNode.children[0].getAttributeByName("href").toString()
+            // TODO refexp: /page/francoisledroff/?anchor=java_plus_rapide_plus_léger
+            metadata.id = extractedId.substring(extractedId.indexOf('=')+1,extractedId.length())
+
         }
         // remove prettyprint class
         if (tagNode?.attributes?.class=='prettyprint') {
@@ -111,6 +118,7 @@ while (next) {
                 author: config.author,
                 *: md
         ])
+        //def (full, dayOfWeek, day, month, year) = (md.publishedDate =~ /([a-z]{1,4}). ([0-9]{1,2}) ([a-z]{1,4}). ([0-9]{1,4})/)[0]
         def (full,year,month,day) = (md.publishedDate =~ /([0-9]{4})-([0-9]{1,2})-([0-9]{1,2})/)[0]
         def postDir = new File(new File(new File(outputDir, year), month), day)
         postDir.mkdirs()
@@ -120,5 +128,5 @@ while (next) {
     }
     next = md.next
     // be gentle to JRoller!
-    Thread.sleep 1000
+    Thread.sleep 10000
 }

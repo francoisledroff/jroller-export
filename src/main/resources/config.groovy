@@ -1,3 +1,5 @@
-origin='http://www.jroller.com/melix/entry/dynamic_database_models_with_groovy'
-jbake_output='/tmp/blog'
-author='Cédric Champeau'
+//origin='http://jroller.com/francoisledroff/entry/java_plus_rapide_plus_l%C3%A9ger'
+origin='http://www.jroller.com/francoisledroff/entry/apache_on_ssl_as_a1'
+//'''http://www.jroller.com/francoisledroff/entry/javapolis_2004'
+jbake_output='/Users/ledroff/workspace/github/blog/src/jbake/content'
+author='Francois Le Droff'

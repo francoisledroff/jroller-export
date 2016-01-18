@@ -2,7 +2,7 @@
 $author
 $publishedDate
 :jbake-type: post
-:jbake-tags: ${tags.join(', ')}
+:jbake-tags: $tags
 :jbake-status: published
 :source-highlighter: prettify
 
